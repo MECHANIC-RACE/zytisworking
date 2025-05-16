@@ -2,7 +2,7 @@
  * @Author: ZYT
  * @Date: 2025-05-12 15:53:08
  * @LastEditors: ZYT
- * @LastEditTime: 2025-05-14 23:35:48
+ * @LastEditTime: 2025-05-16 23:48:29
  * @FilePath: \pantilt_freertos\User\Task\servo.c
  * @Brief: 
  * 
@@ -15,16 +15,14 @@ void Servo_Task(void *argument)
     osDelay(100);
     for (;;) {
 //#ifdef 红绿都一样，伺服线程一样做，只是spe的来源不同
-uint8_t Reset ;
-//Reset = 1;
 
-if (((mode2 == 0 || mode1 == 0) && Q_NO != 2 && ERROR_FLAG == 1) || Reset == 1) {
-    WritePosEx(1, 2048, 1000, 50);
-    WritePosEx(2, 2223, 1000, 50);
+if ((ERROR_FLAG == 1) || Reset == 1) {
+    WritePosEx(1, 2350, 1000, 50);
+    WritePosEx(2, 2200, 1000, 50);  //复位操作,红光no1
     Reset = 0;
-   }
+}
 
-   #ifdef RED  
+#ifdef RED  
    if((mode2==0||mode1==0)&&Q_NO==2)
    {
     WritePosEx(1, tar_pos1, 1000, 50);

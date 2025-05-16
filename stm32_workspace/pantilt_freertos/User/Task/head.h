@@ -1,3 +1,13 @@
+/*
+ * @Author: ZYT
+ * @Date: 2025-05-12 15:18:52
+ * @LastEditors: ZYT
+ * @LastEditTime: 2025-05-16 23:19:16
+ * @FilePath: \pantilt_freertos\User\Task\head.h
+ * @Brief: 
+ * 
+ * Copyright (c) 2025 by zyt, All Rights Reserved. 
+ */
 #ifndef HEAD
 #define HEAD
 //#include "main.h"
@@ -13,15 +23,15 @@
 #include "stdio.h"
 #include "stdlib.h"
 
-#define GREEN  //红光模式还是绿光模式，主要是串口接受的不一样
+#define RED  //红光模式还是绿光模式，主要是串口接受的不一样
 
-extern uint8_t Q_NO;
+extern __IO uint8_t Q_NO;
 extern uint8_t mode1;
 extern uint8_t mode2;
 extern int16_t spe1;
 extern int16_t spe2;
 extern uint8_t ERROR_FLAG;
-
+extern __IO uint8_t Reset;
 #ifdef RED
 extern uint8_t dot1x,dot1y,dot2x,dot2y,dot3x,dot3y,dot4x,dot4y;
 extern int16_t tar_pos1,tar_pos2;
