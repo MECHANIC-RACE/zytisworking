@@ -64,10 +64,9 @@ void Error_Handler(void);
 #define Q_NO2_GPIO_Port GPIOA
 #define Q_NO3_Pin GPIO_PIN_0
 #define Q_NO3_GPIO_Port GPIOB
+#define Q_NO3_EXTI_IRQn EXTI0_IRQn
 #define Q_NO4_Pin GPIO_PIN_1
 #define Q_NO4_GPIO_Port GPIOB
-#define Q_NO5_Pin GPIO_PIN_2
-#define Q_NO5_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

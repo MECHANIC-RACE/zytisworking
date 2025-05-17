@@ -14,10 +14,10 @@ __IO uint8_t Q_NO;
 
 /***target from openmv***/
 #ifdef GREEN
-uint8_t ReceivebufferG[6];
+uint8_t ReceivebufferG[7];
 #endif
 #ifdef RED
-uint8_t ReceivebufferR[14];
+uint8_t ReceivebufferR[19];
 uint8_t dot1x,dot1y,dot2x,dot2y,dot3x,dot3y,dot4x,dot4y;
 int16_t tar_pos1,tar_pos2;
 #endif
@@ -54,7 +54,7 @@ void StartDefaultTask(void *argument)
     WriteSpe(1,0,0);
     WriteSpe(2,0,0);
     Q_NO=1;
-    #ifdef RED
+    #ifdef RED_NO_EXTI
     if (HAL_GPIO_ReadPin(Q_NO2_GPIO_Port, Q_NO2_Pin) == 0) {
         Q_NO = 2; /*红光，模式2，不用再写mode因为已经默认是0了*/
     }
@@ -137,23 +137,42 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     //复位 以及红光no1
     {
         Reset = 1;
+        Q_NO  = 1;
         mode1 = 0;
         mode2 = 0;
         WheelMode(1, mode1);
         WheelMode(2, mode2);
     }
-    /**
+    #ifdef RED
+
     if (GPIO_Pin == Q_NO2_Pin) // 引脚判断
     {
         Q_NO = 2;
+        mode1 = 0;
+        mode2 = 0;
+        WheelMode(1, mode1);
+        WheelMode(2, mode2);
     }
     if (GPIO_Pin == Q_NO3_Pin) // 引脚判断
     {
         Q_NO = 3;
+        mode1 = 1;
+        mode2 = 1;
+        WheelMode(1, mode1);
+        WheelMode(2, mode2);
+        //U_Transmit(3);
     }
+    #endif
+    #ifdef GREEN
     if (GPIO_Pin == Q_NO4_Pin) // 引脚判断
     {
         Q_NO = 4;
+        mode1 = 1;
+        mode2 = 1;
+        WheelMode(1, mode1);
+        WheelMode(2, mode2);
+        // U_Transmit(4);
     }
-    **/
+    #endif
+    
 }
