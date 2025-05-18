@@ -48,8 +48,12 @@ void StartDefaultTask(void *argument)
     #ifdef RED
     HAL_UART_Receive_IT(&huart2,ReceivebufferR,sizeof(ReceivebufferR));
     #endif
-    
-    WheelMode(1,0); //模式0：位置模式 模式1：恒速； 模式2：pwm调速；模式3：步进
+    HAL_TIM_Base_Start(&htim2);
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 10); // arr=100
+    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 90); // arr=100
+    WheelMode(1, 0); // 模式0：位置模式 模式1：恒速； 模式2：pwm调速；模式3：步进
     WheelMode(2,0); //模式0：位置模式 模式1：恒速； 模式2：pwm调速；模式3：步进
     WriteSpe(1,0,0);
     WriteSpe(2,0,0);
