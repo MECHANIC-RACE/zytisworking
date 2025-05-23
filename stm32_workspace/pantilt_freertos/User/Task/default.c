@@ -3,9 +3,9 @@
 #define DISTANCE 1000 //云台到白板的距离 单位mm
 #define PI 3.141592
 #define ANGLE_MAXIMUM_UP 160  //限定舵机能往一边转的角度（4095为一圈
-#define ANGLE_MAXIMUM_DOWN 280  // 限定舵机能往一边转的角度（4095为一圈
-#define ANGLE_MAXIMUM_LEFT 280  //限定舵机能往一边转的角度（4095为一圈
-#define ANGLE_MAXIMUM_RIGHT 280  // 限定舵机能往一边转的角度（4095为一圈
+#define ANGLE_MAXIMUM_DOWN 300  // 限定舵机能往一边转的角度（4095为一圈
+#define ANGLE_MAXIMUM_LEFT 400  //限定舵机能往一边转的角度（4095为一圈
+#define ANGLE_MAXIMUM_RIGHT 400  // 限定舵机能往一边转的角度（4095为一圈
 
 /*复位标志*/
 __IO uint8_t Reset;
@@ -14,10 +14,10 @@ __IO uint8_t Q_NO;
 
 /***target from openmv***/
 #ifdef GREEN
-uint8_t ReceivebufferG[7];
+uint8_t Rxbuffer[16];
 #endif
 #ifdef RED
-uint8_t ReceivebufferR[19];
+uint8_t Rxbuffer[16];
 uint8_t dot1x,dot1y,dot2x,dot2y,dot3x,dot3y,dot4x,dot4y;
 int16_t tar_pos1,tar_pos2;
 #endif
@@ -36,23 +36,23 @@ uint16_t flag;
 int16_t spe1;
 int16_t spe2;
 
-uint8_t mode1=0; //电机模式
-uint8_t mode2=0; //电机模式
+__IO uint8_t mode1=0; //电机模式
+__IO uint8_t mode2=0; //电机模式
 uint8_t ERROR_FLAG;
 
 void StartDefaultTask(void *argument)
 {
     #ifdef GREEN
-    HAL_UART_Receive_IT(&huart2,ReceivebufferG,sizeof(ReceivebufferG));
-    #endif 
+    HAL_UART_Receive_IT(&huart2, Rxbuffer, sizeof(Rxbuffer));
+#endif 
     #ifdef RED
-    HAL_UART_Receive_IT(&huart2,ReceivebufferR,sizeof(ReceivebufferR));
+    HAL_UART_Receive_IT(&huart2,Rxbuffer,sizeof(Rxbuffer));
     #endif
     HAL_TIM_Base_Start(&htim2);
     HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
-    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 10); // arr=100
-    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 90); // arr=100
+    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 20); // arr=100/越小越亮
+    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 80); // arr=100
     WheelMode(1, 0); // 模式0：位置模式 模式1：恒速； 模式2：pwm调速；模式3：步进
     WheelMode(2,0); //模式0：位置模式 模式1：恒速； 模式2：pwm调速；模式3：步进
     WriteSpe(1,0,0);
@@ -97,10 +97,10 @@ void StartDefaultTask(void *argument)
     
 
   /*判断角度是否在正常范围内*/  /**其实只对红光有用，绿光应该无阈值**/
-  #ifdef RED
+  #ifdef REDa
    if(ori_pos1>=1000&&ori_pos1<=4095-1000)
     {
-      if(fdb_pos1>=ori_pos1-ANGLE_MAXIMUM_LEFT||fdb_pos1<=ori_pos1+ANGLE_MAXIMUM_RIGHT)
+      if(fdb_pos1<=ori_pos1-ANGLE_MAXIMUM_LEFT||fdb_pos1>=ori_pos1+ANGLE_MAXIMUM_RIGHT)
       {
         spe1=0;
         mode1=0;
@@ -115,7 +115,7 @@ void StartDefaultTask(void *argument)
     if(ori_pos2>=1000&&ori_pos2<=4095-1000)
     {
       //if(fdb_pos2<=3000&&fdb_pos2>=2000)
-      if(fdb_pos2>=ori_pos2-ANGLE_MAXIMUM_DOWN||fdb_pos2<=ori_pos2+ANGLE_MAXIMUM_UP)
+      if(fdb_pos2<=ori_pos2-ANGLE_MAXIMUM_DOWN||fdb_pos2>=ori_pos2+ANGLE_MAXIMUM_UP)
       {
         spe2=0;
         mode2=0;
@@ -129,8 +129,8 @@ void StartDefaultTask(void *argument)
     }
     /*判断角度是否在正常范围内*/ 
    #endif
-     //printf("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",Q_NO,Reset,spe1,spe2,ori_pos1,ori_pos2,fdb_pos1,fdb_pos2,mode1,mode2);
-    printf("%d,%d,%d,%d\n", Q_NO, Reset, mode1, mode2);
+    printf("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", (float)Q_NO, (float)spe1, (float)spe2, (float)red_x, (float)red_y, (float)dot1x, (float)dot1y, (float)dot2x, (float)dot2y, (float)fdb_pos2);
+    //printf("%d,%d,%d,%d\n",spe1, spe2, dot1x, red_x);
     }
         
 }

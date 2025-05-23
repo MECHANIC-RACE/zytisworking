@@ -5,5 +5,8 @@
   "C_Cpp.default.includePath": [
     "${workspaceFolder}/Core/Inc",
     "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/Inc"
-  ]
+  ],
+  "files.associations": {
+    "head.h": "c"
+  }
 }

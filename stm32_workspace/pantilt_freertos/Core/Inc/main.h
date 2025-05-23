@@ -62,11 +62,13 @@ void Error_Handler(void);
 #define RED_NO1_RESET_EXTI_IRQn EXTI4_IRQn
 #define Q_NO2_Pin GPIO_PIN_5
 #define Q_NO2_GPIO_Port GPIOA
+#define Q_NO2_EXTI_IRQn EXTI9_5_IRQn
 #define Q_NO3_Pin GPIO_PIN_0
 #define Q_NO3_GPIO_Port GPIOB
 #define Q_NO3_EXTI_IRQn EXTI0_IRQn
 #define Q_NO4_Pin GPIO_PIN_1
 #define Q_NO4_GPIO_Port GPIOB
+#define Q_NO4_EXTI_IRQn EXTI1_IRQn
 
 /* USER CODE BEGIN Private defines */
 

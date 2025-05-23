@@ -1,26 +1,38 @@
 /*
+ * @Author: ZYT
+ * @Date: 2025-05-11 00:34:40
+ * @LastEditors: ZYT
+ * @LastEditTime: 2025-05-23 23:11:16
+ * @FilePath: \pantilt_freertos\User\SCSLib\SCSerail.c
+ * @Brief: 
+ * 
+ * Copyright (c) 2025 by zyt, All Rights Reserved. 
+ */
+/*
  * SCServo.c
- * ·ÉÌØ¶æ»úÓ²¼þ½Ó¿Ú²ã³ÌÐò
- * ÈÕÆÚ: 2024.12.2
- * ×÷Õß: txl
+ * ï¿½ï¿½ï¿½Ø¶ï¿½ï¿½Ó²ï¿½ï¿½ï¿½Ó¿Ú²ï¿½ï¿½ï¿½ï¿½
+ * ï¿½ï¿½ï¿½ï¿½: 2024.12.2
+ * ï¿½ï¿½ï¿½ï¿½: txl
  */
 #include <stdint.h>
 #include "SCServo.h"
 #include "main.h"
+#include "head.h"
+
 #include "usart.h"
 #include "gpio.h"
 uint8_t wBuf[128];
 uint8_t wLen = 0;
-extern uint16_t flag;//°²²åÒ»¸öµ÷ÊÔ±äÁ¿
+extern uint16_t flag;//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ô±ï¿½ï¿½ï¿½
 
 
-//UART ½ÓÊÕÊý¾Ý½Ó¿Ú
+//UART ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý½Ó¿ï¿½
 int readSCS(unsigned char *nDat, int nLen)
 {
 	return ftUart_Read(nDat, nLen);
 }
 
-//UART ·¢ËÍÊý¾Ý½Ó¿Ú
+//UART ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý½Ó¿ï¿½
 int writeSCS(unsigned char *nDat, int nLen)
 {
 	while(nLen--){
@@ -33,13 +45,13 @@ int writeSCS(unsigned char *nDat, int nLen)
 	return wLen;
 }
 
-//½ÓÊÕ»º³åÇøË¢ÐÂ
+//ï¿½ï¿½ï¿½Õ»ï¿½ï¿½ï¿½ï¿½ï¿½Ë¢ï¿½ï¿½
 void rFlushSCS()
 {
 	ftBus_Delay();
 }
 
-//·¢ËÍ»º³åÇøË¢ÐÂ
+//ï¿½ï¿½ï¿½Í»ï¿½ï¿½ï¿½ï¿½ï¿½Ë¢ï¿½ï¿½
 void wFlushSCS()
 {
 	if(wLen){
@@ -47,12 +59,12 @@ void wFlushSCS()
 		wLen = 0;
 	}
 }
-//´®¿Ú·¢ËÍº¯Êý
+//ï¿½ï¿½ï¿½Ú·ï¿½ï¿½Íºï¿½ï¿½ï¿½
 void ftUart_Send(uint8_t *nDat , int nLen)
 {
 	HAL_UART_Transmit(&huart1, nDat, nLen, 100);
 }
-//´®¿Ú¶ÁÈ¡º¯Êý
+//ï¿½ï¿½ï¿½Ú¶ï¿½È¡ï¿½ï¿½ï¿½ï¿½
 int ftUart_Read(uint8_t *nDat, int nLen)
 {
 	if(HAL_OK!=HAL_UART_Receive(&huart1, nDat, nLen, 100)){
@@ -63,7 +75,7 @@ int ftUart_Read(uint8_t *nDat, int nLen)
 	}
 }
 
-//×Ô¶¨ÒåÑÓÊ±º¯Êý£¬´óÓÚ10us
+//ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½10us
 void ftBus_Delay(void)
 {
 	osDelay(1);

@@ -27,8 +27,8 @@
 #define RED  //红光模式还是绿光模式，主要是串口接受的不一样
 
 extern __IO uint8_t Q_NO;
-extern uint8_t mode1;
-extern uint8_t mode2;
+extern __IO uint8_t mode1;
+extern __IO uint8_t mode2;
 extern int16_t spe1;
 extern int16_t spe2;
 extern uint8_t ERROR_FLAG;

@@ -34,38 +34,47 @@ void Statemachine_Task(void *argument)
             
             static uint8_t state=0;
             if(state==0){
-                spe1=dot1x-red_x;       //正负待定，乘系数待定
-                spe2=dot1y-red_y;
+                spe1=-3*(dot1x-red_x);       //正负待定，乘系数待定
+                spe2=5*(dot1y-red_y);
                 if(abs(dot1x-red_x)<10&&abs(dot1y-red_y)<10) 
                 {
                    state=1;
-                    osDelay(1000);
+                   spe1 = 0;
+                   spe2 = 0;
+                   osDelay(1000);
                 }
             }else if (state==1)
             {
-                spe1=dot2x-red_x;       //正负待定，乘系数待定
-                spe2=dot2y-red_y;
+                spe1=-3*(dot2x-red_x);       //正负待定，乘系数待定
+                spe2=5*(dot2y-red_y);
                 if(abs(dot2x-red_x)<10&&abs(dot2y-red_y)<10)
                 {
                     state=2;
+                    spe1 = 0;
+                    spe2 = 0;
                     osDelay(1000);
                 } 
             }else if (state==2)
             {
-                spe1=dot3x-red_x;       //正负待定，乘系数待定
-                spe2=dot3y-red_y;
+                spe1=-3*(dot3x-red_x);       //正负待定，乘系数待定
+                spe2=5*(dot3y-red_y);
                 if(abs(dot3x-red_x)<10&&abs(dot3y-red_y)<10) 
                 {
                     state=3;
+                    spe1 = 0;
+                    spe2 = 0;
+
                     osDelay(1000);
                 }
             }else if (state==3)
             {
-                spe1=dot4x-red_x;       //正负待定，乘系数待定
-                spe2=dot4y-red_y;
+                spe1=-3*(dot4x-red_x);       //正负待定，乘系数待定
+                spe2=5*(dot4y-red_y);
                 if(abs(dot4x-red_x)<10&&abs(dot4y-red_y)<10) 
                 {
                     state=0;
+                    spe1 = 0;
+                    spe2 = 0;
                     osDelay(1000);
                 }
             }

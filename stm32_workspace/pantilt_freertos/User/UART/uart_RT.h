@@ -1,3 +1,13 @@
+/*
+ * @Author: ZYT
+ * @Date: 2025-05-18 20:42:48
+ * @LastEditors: ZYT
+ * @LastEditTime: 2025-05-23 19:06:07
+ * @FilePath: \pantilt_freertos\User\UART\uart_RT.h
+ * @Brief: 
+ * 
+ * Copyright (c) 2025 by zyt, All Rights Reserved. 
+ */
 #ifndef UART_RECEIVE
 #define UART_RECEIVE
 
@@ -5,8 +15,8 @@
 #include "usart.h"
 
 
-extern uint8_t ReceivebufferG[6];
-extern uint8_t ReceivebufferR[14];
+extern uint8_t Rxbuffer[16];
+
 void U_Transmit(uint8_t num);
 
 #endif // !UART_RECEIVE

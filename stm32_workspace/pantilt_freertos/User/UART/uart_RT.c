@@ -2,7 +2,7 @@
  * @Author: ZYT
  * @Date: 2025-05-12 23:00:46
  * @LastEditors: ZYT
- * @LastEditTime: 2025-05-15 01:04:08
+ * @LastEditTime: 2025-05-24 00:31:21
  * @FilePath: \pantilt_freertos\User\UART\uart_RT.c
  * @Brief: 
  * 
@@ -18,11 +18,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     if(huart->Instance==USART2)
     {
         #ifdef GREEN
-        Decode_Greenligit(ReceivebufferG);
-        HAL_UART_Receive_IT(&huart2,ReceivebufferG,sizeof(ReceivebufferG));
+        Decode_Greenligit(Rxbuffer);
+        #HAL_UART_Receive_IT(&huart2, Rxbuffer, sizeof(Rxbuffer));
         #endif
         #ifdef RED
-        Decode_Redligit(ReceivebufferR);
+        Decode_Redligit(Rxbuffer);
+        HAL_UART_Receive_IT(&huart2,Rxbuffer,sizeof(Rxbuffer));
         #endif
     }
 }
@@ -41,27 +42,28 @@ void U_Transmit(uint8_t num)
 
 void Decode_Greenligit(uint8_t* Receivebuffer)
 {
-    if(Receivebuffer[0]==0xAA&&Receivebuffer[1]==0xFF&&Receivebuffer[4]==0xFF&&Receivebuffer[5]==0xAA)
+    if(Receivebuffer[0]==0xAA&&Receivebuffer[1]==0xFF&&Receivebuffer[14]==0xFF&&Receivebuffer[15]==0xAA)
         {
             int16_t spe1_tmp=0;
             int16_t spe2_tmp=0;
             //spe1_tmp = (Receivebuffer[2] << 8) | Receivebuffer[3];  // 16-bit 组合
            // spe2_tmp = (Receivebuffer[4] << 8) | Receivebuffer[5];      //高位在前低位在后，大端模式
-           spe1_tmp = Receivebuffer[2];
-           spe2_tmp = Receivebuffer[3];
-           if(spe1_tmp>128)
-           {
-            spe1 =-(spe1_tmp-256)*10;
-           }else{
-            spe1=-spe1_tmp*10;
-           }
-           if(spe2_tmp>128){
-           spe2 = (spe2_tmp-256)*6;
-           }else{
-            spe2=spe2_tmp*6;
-           }
-
-        }
+           spe1_tmp = Receivebuffer[12]-Receivebuffer[10];
+           spe2_tmp = Receivebuffer[13]-Receivebuffer[11];//绿-红
+           //    if(spe1_tmp>128)
+           //    {
+           //     spe1 =-(spe1_tmp-256)*10;
+           //    }else{
+           //     spe1=-spe1_tmp*10;
+           //    }
+           //    if(spe2_tmp>128){
+           //    spe2 = (spe2_tmp-256)*6;
+           //    }else{
+           //     spe2=spe2_tmp*6;
+           //    }
+           spe1 = spe1_tmp;
+           spe2 = -spe2_tmp;
+    }
         HAL_UART_Receive_IT(&huart2,Receivebuffer,sizeof(Receivebuffer));
 }
 #ifdef RED
@@ -69,7 +71,7 @@ void Decode_Greenligit(uint8_t* Receivebuffer)
 
 void Decode_Redligit(uint8_t* Receivebuffer)
 {
-    if(Receivebuffer[0]==0xAA&&Receivebuffer[1]==0xFF&&Receivebuffer[12]==0xFF&&Receivebuffer[13]==0xAA)
+    if(Receivebuffer[0]==0xAA&&Receivebuffer[1]==0xFF&&Receivebuffer[14]==0xFF&&Receivebuffer[15]==0xAA)
         {
             dot1x=Receivebuffer[2];
             dot1y=Receivebuffer[3];
@@ -82,6 +84,6 @@ void Decode_Redligit(uint8_t* Receivebuffer)
             red_x=Receivebuffer[10];
             red_y=Receivebuffer[11];
         }
-        HAL_UART_Receive_IT(&huart2,Receivebuffer,sizeof(Receivebuffer));
+        
 }
 #endif // DEBUG
