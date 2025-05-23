@@ -3,9 +3,8 @@ import cv2  # OpenCV库，用于图像处理
 import numpy as np  # NumPy库，用于数值计算
 import time  # 时间库
 import struct
-from filterpy.kalman import KalmanFilter
-import matplotlib.pyplot as plt
-from collections import deque
+# import serial
+# import serial.tools.list_ports
 # import serial  # 串口通信库
 # 初始化串口
 # 参数说明：'COM3'是串口号，115200是波特率，根据实际情况修改
@@ -41,48 +40,44 @@ upper_red = np.array([179, 255, 255]) # 红色上限
 lower_green = np.array([0, 0, 205])   # 更合理的绿色下限
 upper_green = np.array([61, 255, 255]) # 更合理的绿色上限
 
-x_red, y_red,x_green,y_green=0,0,0,0
+x_red,x_green,y_red,y_green=0,0,0,0
 
-def detect_black_rectangle(frame, min_area=1000, min_side=20, max_aspect_ratio=5):
+# 串口定义
+# serial_port = serial.Serial("/dev/ttyAMA0", 115200, timeout=0.5)
+# serial_port_state = serial_port.is_open
+
+
+def detect_black_rectangle(frame, min_area=10000, min_side=20, max_aspect_ratio=5):
     """
     检测图像中的黑色矩形边框（只处理面积最大的一个）
-    
+
     参数:
         frame: 输入图像(BGR格式)
         min_area: 最小矩形面积阈值
         min_side: 最小边长阈值(像素)
         max_aspect_ratio: 最大宽高比
-    
+
     返回:
         processed_frame: 处理后的图像(带标记)
         rectangle: 检测到的最大矩形信息(4个有序角点坐标), 未检测到返回None
+                  顺序: [左上, 右上, 右下, 左下] (还要再倒置)
     """
     # 转换为HSV颜色空间
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    # 线性查找表（保持蓝色通道不变）
-    lutEqual = np.array([i for i in range(256)]).astype("uint8")
-
-    # # 增强红色通道的查找表（可调整参数）
-    # lutRaisen_red = np.array([int(50 + 0.8 * i) for i in range(256)]).astype("uint8")  # 增强红色
-
-    # # 增强绿色通道的查找表（可调整参数）
-    # lutRaisen_green = np.array([int(50 + 0.8 * i) for i in range(256)]).astype("uint8")  # 增强绿色
-
-    # 组合成三通道 LUT（R:增强, G:增强, B:不变）
-    lutSRG = np.dstack((lutEqual, lutEqual, lutEqual))  # 增强红、绿，蓝不变
-    hsv = cv2.LUT(hsv, lutSRG)  
 
     # 定义黑色的HSV范围
     lower_black = np.array([0, 0, 0])
-    upper_black = np.array([180, 255, 50])
+    upper_black = np.array([179, 255, 100])
 
     # 创建黑色区域的掩膜
     mask = cv2.inRange(hsv, lower_black, upper_black)
+    #cv2.imshow("bkack",mask)
 
     # 形态学操作
-    kernel = np.ones((3,3), np.uint8)
+    kernel = np.ones((3, 3), np.uint8)
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=1)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
+    cv2.resize(mask,(160,120))
 
     # 查找轮廓
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -102,7 +97,7 @@ def detect_black_rectangle(frame, min_area=1000, min_side=20, max_aspect_ratio=5
         epsilon = 0.02 * cv2.arcLength(contour, True)
         approx = cv2.approxPolyDP(contour, epsilon, True)
 
-        # 放宽四边形检测条件（4边则接受）
+        # 四边形检测条件（4边则接受）
         if len(approx) == 4:
             x, y, w, h = cv2.boundingRect(approx)
             aspect_ratio = max(w, h) / min(w, h)
@@ -112,25 +107,49 @@ def detect_black_rectangle(frame, min_area=1000, min_side=20, max_aspect_ratio=5
 
                 # 获取并排序角点
                 corners = approx.reshape(-1, 2)
-                center = corners.mean(axis=0)
-                diff = corners - center
-                angles = np.arctan2(diff[:,1], diff[:,0])
-                sorted_idx = np.argsort(angles)
-                max_rect = corners[sorted_idx]
+
+                # 按x坐标排序
+                x_sorted = corners[np.argsort(corners[:, 0])]
+
+                # 分为左边两个点和右边两个点
+                left_points = x_sorted[:2, :]
+                right_points = x_sorted[2:, :]
+
+                # 在左边点中，y值较小的为左上，较大的为左下
+                left_points = left_points[np.argsort(left_points[:, 1])]
+                top_left = left_points[0]
+                bottom_left = left_points[1]
+
+                # 在右边点中，y值较小的为右上，较大的为右下
+                right_points = right_points[np.argsort(right_points[:, 1])]
+                top_right = right_points[0]
+                bottom_right = right_points[1]
+
+                # 按顺序组合四个点
+                max_rect = np.array([top_left, top_right, bottom_right, bottom_left])
 
     # 绘制检测到的最大矩形
     if max_rect is not None:
         # 绘制矩形边框（红色）
         cv2.drawContours(processed_frame, [max_rect.astype(int)], 0, (0, 0, 255), 2)
 
-        # 绘制角点（蓝色）
-        for (cx, cy) in max_rect:
+        # 绘制角点（蓝色）并标注序号
+        for i, (cx, cy) in enumerate(max_rect):
             cv2.circle(processed_frame, (int(cx), int(cy)), 5, (255, 0, 0), 2)
+            cv2.putText(
+                processed_frame,
+                str(i),
+                (int(cx) + 10, int(cy) + 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (255, 255, 0),
+                2,
+            )
 
     return processed_frame, max_rect
 
 
-def stable_rectangle_detection(cap, num_frames=20, min_consistent=15, max_error=5):
+def stable_rectangle_detection(cap, num_frames=20, min_consistent=10, max_error=8):
     """
     稳定检测黑色矩形（多次检测取平均值）
 
@@ -175,53 +194,10 @@ def stable_rectangle_detection(cap, num_frames=20, min_consistent=15, max_error=
         return avg_corners.astype(int)
     else:
         return None
-
-################ 检测红色光点 ################################################################
-def red_blob(frame):
-    """检测红色光斑（带动态滤波）"""
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    hsv = cv2.LUT(hsv, lutSRaisen)
-    cx, cy = -1, -1  # 默认值
-
-    mask = cv2.inRange(hsv, lower_red, upper_red)
-    cv2.imshow("Red_mask",mask)
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    if contours:
-        largest = max(contours, key=cv2.contourArea)
-        M = cv2.moments(largest)
-        if M["m00"] != 0:
-            cx, cy = int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"])
-
-    # # 动态滤波
-    # smoothed = smooth_coordinate((cx, cy), red_history)
-    # return smoothed if smoothed is not None else (-1, -1)
-    return cx,cy
-
-
-def green_blob(frame):
-    """检测红色光斑（带动态滤波）"""
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    hsv = cv2.LUT(hsv, lutSRaisen)
-    cx, cy = -1, -1  # 默认值
-
-    mask = cv2.inRange(hsv, lower_green, upper_green)
-    cv2.imshow("Green_mask",mask)
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    if contours:
-        largest = max(contours, key=cv2.contourArea)
-        M = cv2.moments(largest)
-        if M["m00"] != 0:
-            cx, cy = int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"])
-
-    # # 动态滤波
-    # smoothed = smooth_coordinate((cx, cy), red_history)
-    # return smoothed if smoothed is not None else (-1, -1)
-    return cx,cy
-
+    
 
 stable_rect = stable_rectangle_detection(cap)
+####################### 主循环 ##############################################################
 while cap.isOpened():
     # 读取摄像头帧
     ret, frame = cap.read()
@@ -231,9 +207,10 @@ while cap.isOpened():
     # 掩模处理
     hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
     mask_red = cv2.inRange(hsv, lower_red, upper_red)
-    cv2.imshow("Mask_red",mask_red)
+    #cv2.imshow("Mask_red",mask_red)
+    
     mask_green = cv2.inRange(hsv, lower_green, upper_green)
-    cv2.imshow("Mask_green",mask_green)
+    #cv2.imshow("Mask_green",mask_green)
 
     # 创建一个用于绘制的图像副本
     display_frame = frame.copy()
@@ -247,10 +224,6 @@ while cap.isOpened():
             cx, cy = point
             cv2.circle(display_frame, (int(cx), int(cy)), 5, (255, 0, 0), 2)
 
-    # 检测红色和绿色光斑
-    # x_red, y_red = red_blob(frame) 
-    # x_green, y_green = green_blob(frame)
-
     contours_red, _ = cv2.findContours(mask_red, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contours_green, _ = cv2.findContours(mask_green, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -258,13 +231,13 @@ while cap.isOpened():
         largest_red = max(contours_red, key=cv2.contourArea)
         M_red = cv2.moments(largest_red)
         if M_red["m00"] != 0:
-            x_red, y_red = int(M_red["m10"] / M_red["m00"]), int(M_red["m01"] / M_red["m00"])
+            x_red, y_red = (M_red["m10"] / M_red["m00"]), (M_red["m01"] / M_red["m00"])
 
     if contours_green:
         largest_green = max(contours_green,key=cv2.contourArea)
         M_green = cv2.moments(largest_green)
         if M_green["m00"] != 0:
-            x_green, y_green = int(M_green["m10"] / M_green["m00"]), int(M_green["m01"] / M_green["m00"])
+            x_green, y_green = (M_green["m10"] / M_green["m00"]), (M_green["m01"] / M_green["m00"])
 
     # 绘制蓝色圆圈（红色光斑）
     if x_red>0 and y_red>0:
@@ -276,10 +249,48 @@ while cap.isOpened():
     # # 显示最终结果
     cv2.imshow("Detection", display_frame)
 
+    pos1_data= [
+        stable_rect[0][0]/4,
+        stable_rect[0][1]/3.9333,
+        stable_rect[1][0]/4,
+        stable_rect[1][1]/3.9333,
+        stable_rect[2][0]/4,
+        stable_rect[2][1]/3.9333,
+        stable_rect[3][0]/4,
+        stable_rect[3][1]/3.9333,
+        x_red/4,
+        y_red/3.9333,
+        x_green/4,
+        y_green/3.9333,
+    ]
+
+    pos_data=np.array(pos1_data).astype("uint8")
+
+    pack_data = struct.pack(
+        ">BB12BBB",
+        0xAA,
+        0xFF,
+        pos_data[0],     # x1
+        pos_data[1],     # y1
+        pos_data[2],     # x2
+        pos_data[3],     # y2
+        pos_data[4],     # x3
+        pos_data[5],     # y3
+        pos_data[6],     # x4
+        pos_data[7],     # y4
+        pos_data[8],     # x_red
+        pos_data[9],     # y_red
+        pos_data[10],    # x_green
+        pos_data[11],    # y_green
+        0xFF,
+        0xAA,
+    )
+    print(pos_data[0],pos_data[1],pos_data[2],pos_data[3],pos_data[10],pos_data[11])
+
+
+    # serial_port.write(pack_data)  # 将数据打包发送到串口
+
     key = cv2.waitKey(1)
-    if key == 32:
-        Figure()
-        break  
     if key == 27:
         break  
 

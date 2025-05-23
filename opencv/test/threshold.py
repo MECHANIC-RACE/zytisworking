@@ -22,9 +22,11 @@ cap.set(cv2.CAP_PROP_EXPOSURE, -6)  # 典型范围：-8（最暗）到 -1（较�
 # 1. 饱和度增强定义
 # # 调节通道强度
 lutEqual = np.array([i for i in range(256)]).astype("uint8")
+min_val, max_val = 150, 151
+lutRaisen = np.array([0 if i < min_val else 255 if i > max_val else int((i - min_val) / (max_val - min_val) * 255) for i in range(256)]).astype("uint8")
 # lutRaisen = np.array([int(102+0.6*i) for i in range(256)]).astype("uint8")
 # # 调节饱和度
-lutSRaisen = np.dstack((lutEqual, lutEqual, lutEqual))  # Saturation raisen
+lutSRaisen = np.dstack((lutRaisen, lutEqual, lutEqual))  # Saturation raisen
 # 2. 滑动条定义
 cv2.namedWindow("TrackBars")
 
@@ -51,7 +53,7 @@ while cap.isOpened():
         # # 1. 饱和度增强
         hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)  # 色彩空间转换, RGB->HSV
 
-        #cv2.imshow('hsv', hsv)
+        cv2.imshow('hsv', hsv)
         blendSRaisen = cv2.LUT(hsv, lutSRaisen)             # 饱和度增大
         # 2. 掩膜生成
         h_min = cv2.getTrackbarPos("Hue Min", "TrackBars")
@@ -65,8 +67,8 @@ while cap.isOpened():
         mask = cv2.inRange(blendSRaisen, lower, upper)
         cv2.imshow("Mask",mask)
         imgResult = cv2.bitwise_and(frame, frame, mask=mask)
-        # cv2.imshow('result', imgResult)
-
+        #cv2.imshow('result', imgResult)
+        # cv2.imshow('r',blendSRaisen)
         key = cv2.waitKey(1)
         if key == 27:
             break
