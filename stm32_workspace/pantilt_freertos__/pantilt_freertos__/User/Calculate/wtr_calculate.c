@@ -1,37 +1,16 @@
 /*
  * @Author: szf
  * @Date: 2023-02-22 12:04:21
- * @LastEditTime: 2024-06-10 16:55:37
+ * @LastEditTime: 2025-05-26 01:39:55
  * @LastEditors: ZYT
  * @brief 运动学逆解算及PID计算函数
- * @FilePath: \Gantry_Trial\UserCode\Lib\Calculate\wtr_calculate.c
+ * @FilePath: \pantilt_freertos__\User\Calculate\wtr_calculate.c
  */
 
 #include "wtr_calculate.h"
 
 #include <math.h>
 //#include "Chassis_UserConfig.h"
-
-double moter_speed[4];
-
-// 麦轮底盘参数
-#define rotate_ratio    0.3615   // (Width + Length)/2
-#define wheel_rpm_ratio 2387.324 // 换算线速度到rpm
-
-
-/**
- * @brief麦克纳姆轮底盘逆解算
- * @author: szf
- * @date:
- * @return {void}
- */
-void CalculateFourMecanumWheels(double *moter_speed, double vx, double vy, double vw)
-{
-    moter_speed[0] = (vx - vy - vw * rotate_ratio) * wheel_rpm_ratio;
-    moter_speed[1] = (vx + vy - vw * rotate_ratio) * wheel_rpm_ratio;
-    moter_speed[2] = (-vx + vy - vw * rotate_ratio) * wheel_rpm_ratio;
-    moter_speed[3] = (-vx - vy - vw * rotate_ratio) * wheel_rpm_ratio;
-}
 
 
 /**
@@ -91,44 +70,7 @@ void P_Calc(__IO PID_t *pid)
         pid->output = 0;
 }
 
-/**
- * @brief: 位置伺服
- * @auther: Chen YiTong 3083697520
- * @param {float} ref 目标位置
- * @param {DJI_t} *motor 电机结构体
- * @return {*}
- */
-void positionServo(float ref, DJI_t *motor)
-{
 
-    motor->posPID.ref = ref;
-    motor->posPID.fdb = motor->AxisData.AxisAngle_inDegree;
-    P_Calc(&motor->posPID);
-    
-    motor->speedPID.ref = motor->posPID.output;
-    motor->speedPID.fdb = motor->FdbData.rpm;
-    PID_Calc(&(motor->speedPID));
-}
-/**
- * @brief: 位置伺服,使用雷达反馈
- * @auther: zyt
- * @param {float} ref 目标位置(距测距雷达的目标距离)
- * @param {DJI_t} *motor 电机结构体
- * @param {LidarData} lidardata 电机结构体
- * @return {*}
- */
-
-void positionServo_lidar(float ref, DJI_t *motor, LidarPointTypedef lidardata)
-{
-
-    motor->posPID.ref = ref;
-    motor->posPID.fdb = lidardata.distance_aver;
-    PID_Calc_P(&motor->posPID);
-
-    motor->speedPID.ref = motor->posPID.output;
-    motor->speedPID.fdb = motor->FdbData.rpm;
-    PID_Calc(&(motor->speedPID));
-}
 
 /**
  * @brief: 速度伺服函数
@@ -137,71 +79,16 @@ void positionServo_lidar(float ref, DJI_t *motor, LidarPointTypedef lidardata)
  * @param {DJI_t} *motor 电机结构体
  * @return {*}
  */
-void speedServo(float ref, DJI_t *motor)
+void speedServo(float ref, float fdb,PID_t* pid)
 {
-    motor->speedPID.ref = ref;
-    motor->speedPID.fdb = motor->FdbData.rpm;
-    PID_Calc(&(motor->speedPID));
+    pid->ref = ref;
+    pid->fdb = fdb;
+    PID_Calc(pid);
 }
-
-/**
- * @brief: 圆周死区控制
- * @auther: szf
- * @param {double} x
- * @param {double} y
- * @param {double} *new_x
- * @param {double} *new_y
- * @param {double} threshould
- * @return {*}
- */
-void DeadBand(double x, double y, double *new_x, double *new_y, double threshould)
+void pid_init(PID_t *pid,float kp,float ki,float kd)
 {
-    double length     = sqrt(x * x + y * y);
-    double new_length = length - threshould;
-
-    if (new_length <= 0) {
-        *new_x = 0;
-        *new_y = 0;
-        return;
-    }
-
-    double k = new_length / length;
-
-    *new_x = x * k;
-    *new_y = y * k;
-}
-
-/**
- * @brief: 单轴死区控制
- * @auther: szf
- * @param {double} x
- * @param {double} *new_x
- * @param {double} threshould
- * @return {*}
- */
-// void DeadBandOneDimensional(double x, double *new_x, double threshould)
-// {
-
-//     double difference_x = fabs(x) - threshould;
-
-//     if (difference_x < 0) {
-//         *new_x = 0;
-//         return;
-//     }
-
-//     double k = difference_x / fabs(x);
-//     *new_x   = k * x;
-// }
-
-void DeadBandOneDimensional(double x, double *new_x, double threshould)
-{
-
-    double difference_x = fabs(x) - threshould;
-
-    if (difference_x < 0) {
-        *new_x = 0;
-        return;
-    }
-
-    return;
+    pid->KP = kp;
+    pid->KI = ki;
+    pid->KD = kd;
+    pid->outputMax = 300;
 }

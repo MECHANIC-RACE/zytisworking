@@ -20,6 +20,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "uart_RT.h"
+#include "wtr_calculate.h"
 #define RED  //红光模式还是绿光模式，主要是串口接受的不一样
 #define N   100
 

@@ -66,22 +66,18 @@ uint8_t dot1x,dot1y,dot2x,dot2y,dot3x,dot3y,dot4x,dot4y;
 int16_t tar_pos1,tar_pos2;
 #endif
 uint8_t red_x,red_y;
-/***Feedback Data***/
-int16_t fdb_pos1;
-int16_t fdb_pos2;
 
 
-uint16_t flag;
+
 /***Feedback Data***/
 
 /*spe_*/
 int16_t spe1;
 int16_t spe2;
 
-__IO uint8_t mode1=0; //????
-__IO uint8_t mode2=0; //????
+
 __IO uint8_t gpio_interupt=0;
-uint8_t ERROR_FLAG;
+PID_t pid_x, pid_y;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -144,7 +140,9 @@ int main(void)
   WriteSpe(1, 0, 0);
   WriteSpe(2, 0, 0);
   Q_NO = 1;
- 
+  pid_init(&pid_x, 10, 0.0, 0.1);
+  pid_init(&pid_y, 5, 0.0, 0.1);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -222,68 +220,42 @@ int main(void)
             WheelMode(1, 1);
             WheelMode(2, 1);
             static uint16_t state=0;
-            spe1=-10*(dot_cal_x[state]-red_x);
-            spe2=5*(dot_cal_y[state]-red_y);
+            speedServo(dot_cal_x[state], red_x, &pid_x);
+            speedServo(dot_cal_y[state], red_y, &pid_y);
+            //spe1=-10*(dot_cal_x[state]-red_x);
+            //spe2=5*(dot_cal_y[state]-red_y);
             //spe1 = -250;
             //spe2 = -100;
-            WriteSpe(1, spe1, 50);
-            WriteSpe(2, spe2, 50);
-            printf("%f,%f,%f,%f\n", (float)dot_cal_x[state], (float)red_x, (float)dot_cal_y[state], (float)red_y);
+            WriteSpe(1, -1*pid_x.output, 50);
+            WriteSpe(2, pid_y.output, 50);
+            printf("%f,%f,%f,%f,%f,%f\n", (float)dot_cal_x[state], (float)red_x, (float)dot_cal_y[state], (float)red_y, pid_x.output, pid_y.output);
             //if(abs(dot_cal_x[state]-red_x)<5&&abs(dot_cal_y[state]-red_y)<5) 
             {
                 state++;
-                if(state%N==0) HAL_Delay(10);
-                if(state==4*N) state=0;
+                if (state == 4 * N) state = 0;
+                if(state%N==0) 
+                {
+                  // if(state==0){
+                  //     pid_init(&pid_x,  10, 0.02, 0.01);
+                  //     pid_init(&pid_y, 10 , 0.02, 0.01);
+                  // }
+                  // if (state == N) {
+                  //     pid_init(&pid_x, 14 , 0.02, 0.01);//x波动小
+                  //     pid_init(&pid_y, 5 , 0.02, 0.01);
+                  // }
+                  // if (state == 2*N) {
+                  //     pid_init(&pid_x, 10 , 0.02, 0.01);
+                  //     pid_init(&pid_y, 8 , 0.02, 0.01);
+                  // }
+                  // if (state == 3*N) {
+                  //     pid_init(&pid_x, 10 , 0.02, 0.01);
+                  //     pid_init(&pid_y, 5 , 0.02, 0.01);
+                  // }
+                  HAL_Delay(10);
+                }
+                
                 HAL_Delay(20);
             }
-/**
-            if(state==0){
-                spe1=-3*(dot1x-red_x);       //??????????
-                spe2=5*(dot1y-red_y);
-                if(abs(dot1x-red_x)<10&&abs(dot1y-red_y)<10) 
-                {
-                   state=1;
-                   spe1 = 0;
-                   spe2 = 0;
-                   HAL_Delay(1000);
-                }
-            }else if (state==10)
-            {
-                spe1=-3*(dot2x-red_x);       //??????????
-                spe2=5*(dot2y-red_y);
-                if(abs(dot2x-red_x)<10&&abs(dot2y-red_y)<10)
-                {
-                    state=2;
-                    spe1 = 0;
-                    spe2 = 0;
-                    HAL_Delay(1000);
-                } 
-            }else if (state==20)
-            {
-                spe1=-3*(dot3x-red_x);       //??????????
-                spe2=5*(dot3y-red_y);
-                if(abs(dot3x-red_x)<10&&abs(dot3y-red_y)<10) 
-                {
-                    state=3;
-                    spe1 = 0;
-                    spe2 = 0;
-
-                    HAL_Delay(1000);
-                }
-            }else if (state==30)
-            {
-                spe1=-3*(dot4x-red_x);       //??????????
-                spe2=5*(dot4y-red_y);
-                if(abs(dot4x-red_x)<10&&abs(dot4y-red_y)<10) 
-                {
-                    state=0;
-                    spe1 = 0;
-                    spe2 = 0;
-                    HAL_Delay(1000);
-                }
-            }
-            
-            */
         }
         
     #endif
@@ -296,39 +268,7 @@ int main(void)
     }
     
     #endif // DEBUG 
-    //HAL_Delay(1);
-    
-    
-      if(gpio_interupt==1)
-      {
-          if(Q_NO == 1){
-          mode1 = 0;
-          mode2 = 0;
-          WheelMode(1, mode1);
-          WheelMode(2, mode2);
-          }else if (Q_NO==2)
-          {
-              mode1 = 0;
-              mode2 = 0;
-              WheelMode(1, mode1);
-              WheelMode(2, mode2);
-          }else if(Q_NO==3)
-          {
-              mode1 = 1;
-              mode2 = 1;
-              WheelMode(1, mode1);
-              WheelMode(2, mode2);
-          }else
-          {
-              mode1 = 1;
-              mode2 = 1;
-              WheelMode(1, mode1);
-              WheelMode(2, mode2);
-          }
-          gpio_interupt = 0;
-      
-      
-    }
+    //HAL_Delay(1);    
   }
     /* USER CODE END WHILE */
 

@@ -1,9 +1,9 @@
 /*
  * @Author: szf
  * @Date: 2023-02-22 12:06:17
- * @LastEditors: labbbbbbbbb 
- * @LastEditTime: 2024-04-28 16:01:21
- * @FilePath: \Upper_trial01\UserCode\Lib\Calculate\wtr_calculate.h
+ * @LastEditors: ZYT
+ * @LastEditTime: 2025-05-26 01:41:27
+ * @FilePath: \pantilt_freertos__\User\Calculate\wtr_calculate.h
  * @brief大疆电机PID以及底盘逆解
  *
  * Copyright (c) 2023 by ChenYiTong, All Rights Reserved.
@@ -11,31 +11,23 @@
 
 #pragma once
 
-//#include "chassis_start.h"
-#include "STP_Decode.h"
-#include "wtr_dji.h"
+#include "main.h"
 
-#define r_underpan_3 0.1934
-#define r_underpan_4 0.25
-#define r_wheel      0.076
 
-// 定义数组，分别存放四个轮子对应电机的速度
-extern double moter_speed[4];
+typedef struct {
+    float KP;        // PID参数P
+    float KI;        // PID参数I
+    float KD;        // PID参数D
+    float fdb;       // PID反馈值
+    float ref;       // PID目标值
+    float cur_error; // 当前误差
+    float error[2];  // 前两次误差
+    float output;    // 输出值
+    float outputMax; // 最大输出值的绝对值
+    float outputMin; // 最小输出值的绝对值用于防抖
 
-// 声明运动学逆解函数
-void CalculateFourMecanumWheels(double *moter_speed, double vx, double vy, double vw);
+    float integral; // add by zyt
+} PID_t;
 
-// 位置伺服
-void positionServo(float ref, DJI_t *motor);
-void positionServo_lidar(float ref, DJI_t *motor, LidarPointTypedef lidardata);
-
-// 速度伺服
-void speedServo(float ref, DJI_t *motor);
-
-// 圆周死区控制
-void DeadBand(double x, double y, double *new_x, double *new_y, double threshould);
-
-// 单维度死区控制
-void DeadBandOneDimensional(double x, double *new_x, double threshould);
-
-void PID_Calc_P(__IO PID_t *pid);
+void speedServo(float ref, float fdb, PID_t *pid);
+void pid_init(PID_t *pid, float kp, float ki, float kd);
