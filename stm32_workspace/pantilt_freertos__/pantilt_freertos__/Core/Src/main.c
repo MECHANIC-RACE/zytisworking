@@ -66,8 +66,7 @@ uint8_t dot1x,dot1y,dot2x,dot2y,dot3x,dot3y,dot4x,dot4y;
 int16_t tar_pos1,tar_pos2;
 #endif
 uint8_t red_x,red_y;
-
-
+uint8_t green_x, green_y;
 
 /***Feedback Data***/
 
@@ -140,9 +139,11 @@ int main(void)
   WriteSpe(1, 0, 0);
   WriteSpe(2, 0, 0);
   Q_NO = 1;
-  pid_init(&pid_x, 10, 0.0, 0.1);
-  pid_init(&pid_y, 5, 0.0, 0.1);
-
+  //pid_init(&pid_x, 15, 0, 0.1);
+  //pid_init(&pid_y, 20, 0.2, 0.1);//for red  y is ok but x....
+  pid_init(&pid_x, 10, 0.0, 0.0);
+  pid_init(&pid_y, 10, 0.0, 0.0);
+#define pi 3.14159
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -156,8 +157,8 @@ int main(void)
             /*past??reset???*/
             WheelMode(1, 0);
             WheelMode(2, 0);
-            WritePosEx(1, 2350, 1000, 50);
-            WritePosEx(2, 2200, 1000, 50); // 复位操作,红光no1
+            WritePosEx(1, 2210, 1000, 50); // red:1:2350;2:2200
+            WritePosEx(2, 2725, 1000, 50); // 复位操作,红光no1
         }
         else if (Q_NO==2)
         {
@@ -220,20 +221,23 @@ int main(void)
             WheelMode(1, 1);
             WheelMode(2, 1);
             static uint16_t state=0;
+            uint16_t pos_x       = ReadPos(1);
+            float angle_cos      = cos(2 * pi / 4095 * abs(pos_x - 2350));
+            // if (abs(red_x - 80) > 40) {
+            //     pid_init(&pid_x, 10, 0.06, 0.0);
+            // } else {
+            //     pid_init(&pid_x, 25, 0.06, 0.01);
+            // }
             speedServo(dot_cal_x[state], red_x, &pid_x);
             speedServo(dot_cal_y[state], red_y, &pid_y);
-            //spe1=-10*(dot_cal_x[state]-red_x);
-            //spe2=5*(dot_cal_y[state]-red_y);
-            //spe1 = -250;
-            //spe2 = -100;
-            WriteSpe(1, -1*pid_x.output, 50);
+            WriteSpe(1, -1 * pid_x.output * angle_cos, 100);
             WriteSpe(2, pid_y.output, 50);
-            printf("%f,%f,%f,%f,%f,%f\n", (float)dot_cal_x[state], (float)red_x, (float)dot_cal_y[state], (float)red_y, pid_x.output, pid_y.output);
-            //if(abs(dot_cal_x[state]-red_x)<5&&abs(dot_cal_y[state]-red_y)<5) 
-            {
-                state++;
-                if (state == 4 * N) state = 0;
-                if(state%N==0) 
+            //WriteSpe(1, 100, 50);
+            //WriteSpe(2, 100, 50);
+            printf("%f,%f,%f,%f,%f,%f\n", (float)dot_cal_x[state], (float)red_x, (float)dot_cal_y[state], (float)red_y, pid_x.output,angle_cos);
+            state++;
+            if (state == 4 * N) state = 0;
+               /* if(state%N<0.2*N) 
                 {
                   // if(state==0){
                   //     pid_init(&pid_x,  10, 0.02, 0.01);
@@ -251,23 +255,37 @@ int main(void)
                   //     pid_init(&pid_x, 10 , 0.02, 0.01);
                   //     pid_init(&pid_y, 5 , 0.02, 0.01);
                   // }
-                  HAL_Delay(10);
-                }
-                
-                HAL_Delay(20);
-            }
+                  pid_init(&pid_x, 26, 0.04, 0.1);
+                  //pid_init(&pid_y, 3 , 0.0, 0.05);
+                  //printf("%d\n", state);
+                  //HAL_Delay(10);
+                }else
+                {
+                    pid_init(&pid_x, 15, 0.06, 0.2);                    //pid_init(&pid_y, 3 , 0.0, 0.05);
+                }*/
+            
+                HAL_Delay(25);
         }
         
     #endif
     #ifdef GREEN
-    if(Q_NO>=4)
-    {
-        // spe1=red_x-80;  //????80?60???, ??????????
-        // spe2=red_y-60;
-        //spe1?spe2?openmv?????,??????????red??
-    }
-    
-    #endif // DEBUG 
+        if (Q_NO == 1) {
+            /*past??reset???*/
+            WheelMode(1, 0);
+            WheelMode(2, 0);
+            WritePosEx(1, 2210, 1000, 50); // red:1:2350;2:2200
+            WritePosEx(2, 2725, 1000, 50); // 复位操作,红光no1
+        } else if (Q_NO == 4) {
+            WheelMode(1, 1);
+            WheelMode(2, 1);
+            speedServo(red_x, green_x,&pid_x);
+            speedServo(red_y,green_y ,&pid_y);
+            WriteSpe(1, -1 * pid_x.output ,50);
+            WriteSpe(2, pid_y.output, 50);
+        }
+        printf("%f,%f,%f,%f\n", (float)red_x, (float)green_x, (float)red_y, (float)green_y);
+
+#endif // DEBUG 
     //HAL_Delay(1);    
   }
     /* USER CODE END WHILE */

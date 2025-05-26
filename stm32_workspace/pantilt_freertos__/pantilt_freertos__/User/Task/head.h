@@ -21,7 +21,7 @@
 #include "stdlib.h"
 #include "uart_RT.h"
 #include "wtr_calculate.h"
-#define RED  //红光模式还是绿光模式，主要是串口接受的不一样
+#define GREEN  //红光模式还是绿光模式，主要是串口接受的不一样
 #define N   100
 
 extern __IO uint8_t Q_NO;
@@ -38,7 +38,6 @@ extern uint8_t dot_cal_x[4*N];
 extern uint8_t dot_cal_y[4*N];
 #endif // RED
 extern uint8_t red_x,red_y;
-extern int16_t fdb_pos1;
-extern int16_t fdb_pos2;
+extern uint8_t green_x, green_y;
 
 #endif // !HEAD

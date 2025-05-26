@@ -1,7 +1,7 @@
 /*
  * @Author: szf
  * @Date: 2023-02-22 12:04:21
- * @LastEditTime: 2025-05-26 01:39:55
+ * @LastEditTime: 2025-05-27 00:46:34
  * @LastEditors: ZYT
  * @brief 运动学逆解算及PID计算函数
  * @FilePath: \pantilt_freertos__\User\Calculate\wtr_calculate.c
@@ -90,5 +90,5 @@ void pid_init(PID_t *pid,float kp,float ki,float kd)
     pid->KP = kp;
     pid->KI = ki;
     pid->KD = kd;
-    pid->outputMax = 300;
+    pid->outputMax = 1000;
 }

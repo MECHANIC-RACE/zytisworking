@@ -2,7 +2,7 @@
  * @Author: ZYT
  * @Date: 2025-05-12 23:00:46
  * @LastEditors: ZYT
- * @LastEditTime: 2025-05-25 23:52:36
+ * @LastEditTime: 2025-05-27 03:12:22
  * @FilePath: \pantilt_freertos__\User\UART\uart_RT.c
  * @Brief: 
  * 
@@ -23,12 +23,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     {
         #ifdef GREEN
         Decode_Greenligit(Rxbuffer);
-        #HAL_UART_Receive_IT(&huart2, Rxbuffer, sizeof(Rxbuffer));
+        HAL_UART_Receive_IT(&huart2, Rxbuffer, 16);
         #endif
         #ifdef RED
         Decode_Redligit(Rxbuffer);
         
-        //printf("%d,%d\n", spe1, spe2);
+       // printf("%f,%f\n", spe1, spe2);
         //printf("1\n");
         HAL_UART_Receive_IT(&huart2, Rxbuffer, 16);
 #endif
@@ -51,16 +51,13 @@ void Decode_Greenligit(uint8_t* Receivebuffer)
 {
     if(Receivebuffer[0]==0xAA&&Receivebuffer[1]==0xFF&&Receivebuffer[14]==0xFF&&Receivebuffer[15]==0xAA)
         {
-            int16_t spe1_tmp=0;
-            int16_t spe2_tmp=0;
-            
-           spe1_tmp = Receivebuffer[12]-Receivebuffer[10];
-           spe2_tmp = Receivebuffer[13]-Receivebuffer[11];//绿-红
-           
-           spe1 = spe1_tmp;
-           spe2 = -spe2_tmp;
+
+        red_x = Receivebuffer[10];
+        red_y = Receivebuffer[11];
+        green_x = Receivebuffer[12];
+        green_y = Receivebuffer[13];
     }
-        HAL_UART_Receive_IT(&huart2,Receivebuffer,sizeof(Receivebuffer));
+       // HAL_UART_Receive_IT(&huart2,Receivebuffer,sizeof(Receivebuffer));
 }
 #ifdef RED
 
@@ -77,8 +74,8 @@ void Decode_Redligit(uint8_t* Receivebuffer)
             dot3y=Receivebuffer[7];
             dot4x=Receivebuffer[8];
             dot4y=Receivebuffer[9];
-            red_x=Receivebuffer[10];
-            red_y=Receivebuffer[11];
+            red_x=Receivebuffer[12];
+            red_y=Receivebuffer[13];
             
             
         }
